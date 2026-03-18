@@ -1,4 +1,5 @@
 import cv2
+from picamera2 import Picamera2
 
 ARUCO_DICT = {
 	"DICT_6X6_250": cv2.aruco.DICT_6X6_250,
@@ -23,7 +24,12 @@ def aruco_display(corners, ids, rejected, image):
 
 			cX = int((topLeft[0] + bottomRight[0]) / 2.0)
 			cY = int((topLeft[1] + bottomRight[1]) / 2.0)
-			cv2.circle(image, (cX, cY), 4, (0, 0, 255), -1)
+			
+
+			relX = cX - 640
+			relY = -(cY - 360)
+
+			cv2.circle(image, (relX, relY), 4, (0, 0, 255), -1)
 
 			cv2.putText(image, str(markerID), (topLeft[0], topLeft[1] - 10),
 				cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
@@ -41,14 +47,14 @@ arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_type])
 arucoParams = cv2.aruco.DetectorParameters()
 detector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
 
-cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+picam2 = Picamera2()
+picam2.configure(picam2.create_preview_configuration(main={"format": "RGB888", "size": (1280, 720)}))
+picam2.start()
 
-while cap.isOpened():
-	ret, img = cap.read()
-	if not ret:
-		break
+print("Camera started, detecting ArUco markers...")
+
+while True:
+	img = picam2.capture_array()
 
 	corners, ids, rejected = detector.detectMarkers(img)
 	output = aruco_display(corners, ids, rejected, img)
@@ -58,5 +64,5 @@ while cap.isOpened():
 	if cv2.waitKey(1) & 0xFF == ord('q'):
 		break
 
-cap.release()
+picam2.stop()
 cv2.destroyAllWindows()
