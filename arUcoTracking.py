@@ -54,6 +54,7 @@ def get_frame():
     img = picam2.capture_array()
     corners, ids, rejected = detector.detectMarkers(img)
     output = aruco_display(corners, ids, rejected, img)
+    output = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
     return output
 
 def stop():
