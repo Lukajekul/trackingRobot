@@ -1,68 +1,72 @@
-import cv2
-from picamera2 import Picamera2
-
-ARUCO_DICT = {
-	"DICT_6X6_250": cv2.aruco.DICT_6X6_250,
-}
-
-def aruco_display(corners, ids, rejected, image):
-	if len(corners) > 0:
-		ids = ids.flatten()
-		for (markerCorner, markerID) in zip(corners, ids):
-			markerCorners = markerCorner.reshape((4, 2))
-			(topLeft, topRight, bottomRight, bottomLeft) = markerCorners
-
-			topRight = (int(topRight[0]), int(topRight[1]))
-			bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
-			bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
-			topLeft = (int(topLeft[0]), int(topLeft[1]))
-
-			cv2.line(image, topLeft, topRight, (0, 255, 0), 2)
-			cv2.line(image, topRight, bottomRight, (0, 255, 0), 2)
-			cv2.line(image, bottomRight, bottomLeft, (0, 255, 0), 2)
-			cv2.line(image, bottomLeft, topLeft, (0, 255, 0), 2)
-
-			cX = int((topLeft[0] + bottomRight[0]) / 2.0)
-			cY = int((topLeft[1] + bottomRight[1]) / 2.0)
-			
-
-			relX = cX - 640
-			relY = -(cY - 360)
-
-			cv2.circle(image, (relX, relY), 4, (0, 0, 255), -1)
-
-			cv2.putText(image, str(markerID), (topLeft[0], topLeft[1] - 10),
-				cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-			cv2.putText(image, f"({cX}, {cY})", (cX + 10, cY - 10),
-				cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-
-			print(f"Marker ID {markerID} | Center: ({cX}, {cY})")
-
-	return image
+import tkinter as tk
+from PIL import Image,ImageTk
+import os
+import arUcoTracking
 
 
-aruco_type = "DICT_6X6_250"
+class UserInterface:
+    def __init__(self,window):
+        self.window = window
+        self.window.title("User Interface")
+        self.window.attributes('-zoomed', True)
+        
+        self.window.geometry("1280x720")
 
-arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_type])
-arucoParams = cv2.aruco.DetectorParameters()
-detector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
+        self.canvas = tk.Canvas(window,width=1280,height=720)
+        self.canvas.pack()
 
-picam2 = Picamera2()
-picam2.configure(picam2.create_preview_configuration(main={"format": "RGB888", "size": (1280, 720)}))
-picam2.start()
+        self.update()
 
-print("Camera started, detecting ArUco markers...")
+    def update(self):
+        frame = arUcoTracking.get_frame()
 
-while True:
-	img = picam2.capture_array()
+        img = Image.fromarray(frame)
+        imgtk = ImageTk.PhotoImage(image=img)
 
-	corners, ids, rejected = detector.detectMarkers(img)
-	output = aruco_display(corners, ids, rejected, img)
+        self.canvas.imgtk = imgtk
+        self.canvas.create_image(0,0, anchor=tk.NW, image=imgtk)
 
-	cv2.imshow('ArUco Detection', output)
+        self.window.after(10, self.update)
 
-	if cv2.waitKey(1) & 0xFF == ord('q'):
-		break
+root = tk.Tk()
 
-picam2.stop()
-cv2.destroyAllWindows()
+app = UserInterface(root)
+
+root.mainloop()
+
+arUcoTracking.stop()
+
+
+# window = tk.Tk()
+
+# height = window.winfo_screenheight()
+# width = window.winfo_screenwidth()
+# size = f"{width}x{height}"
+
+# window.geometry(size)
+# window.state('zoomed')
+
+# def start():
+#     print("pressed")
+
+# startup = tk.Button(
+#     window,
+#     text = "START",
+#     width = 30,
+#     height = 30,
+#     bg = "green",
+#     fg = "blue",
+#     command=start
+# )
+# startup.pack()
+
+# password = tk.Entry(fg="yellow", bg="blue", width=50)
+
+
+
+# window.mainloop()
+
+
+
+
+
