@@ -13,6 +13,8 @@ class UserInterface:
         
         self.window.geometry("1280x720")
 
+        
+
 #width=1280,height=720
        # make columns and rows expand to fill the window
         window.grid_columnconfigure(0, weight=1)
@@ -25,19 +27,32 @@ class UserInterface:
         self.radar = tk.Canvas(window, width=int(window.winfo_screenwidth()/2), height=int(window.winfo_screenheight()/2))
         self.radar.grid(row=0, column=1, sticky="nsew")
 
-        self.start = tk.Button(window, text="START", bg="green", fg="blue")
+        self.start = tk.Button(window, text="START", bg="green", fg="blue", command=self.start)
         self.start.grid(row=1, column=0, sticky="nsew")
 
-        self.stop = tk.Button(window, text="STOP", bg="red", fg="blue")
+        self.stop = tk.Button(window, text="STOP", bg="red", fg="blue", command=self.stop)
         self.stop.grid(row=1, column=1, sticky="nsew")
 
-        self.lockOn = tk.Button(window, text="Lock onto the target")
+        self.lockOn = tk.Button(window, text="Lock onto the target", command=self.correctTarget)
         self.lockOn.grid(row=2, column=0, sticky="nsew")
 
-        self.shutDown = tk.Button(window, text="Stur Down")
+        self.shutDown = tk.Button(window, text="Stur Down", command=self.close)
         self.shutDown.grid(row=2, column=1, sticky="nsew")
 
         self.update()
+
+    def start(self):
+        tracking=True
+
+    def stop(self):
+        tracking=False
+
+    def correctTarget(self):
+        pass
+
+    def close(self):
+        pass
+
 
     def update(self):
         frame = arUcoTracking.get_frame()
