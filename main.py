@@ -13,6 +13,9 @@ class UserInterface:
         
         self.window.geometry("1280x720")
 
+        self.tracking=False
+
+        self.correctTargetAttack=False
         
 
 #width=1280,height=720
@@ -42,20 +45,31 @@ class UserInterface:
         self.update()
 
     def start(self):
-        tracking=True
+        self.tracking=True
 
     def stop(self):
-        tracking=False
+        self.tracking=False
 
     def correctTarget(self):
-        pass
+        self.correctTargetAttack=True
 
     def close(self):
-        pass
+        closeWindow = tk.Toplevel(self.window)
+        closeWindow.geometry("250x150")
+        closeWindow.title("Shutting down")
+
+        tk.Label(closeWindow, text="Are you sure you want \nto shut down the program").pack(pady=20)
+        
+        buttonFrame = tk.Frame(closeWindow)
+        buttonFrame.pack()
+
+        tk.Button(buttonFrame, text="YES", command=self.window.destroy).pack(side=tk.LEFT, padx=5)
+        tk.Button(buttonFrame, text="NO", command=closeWindow.destroy).pack(side=tk.LEFT, padx=5)
+
 
 
     def update(self):
-        frame = arUcoTracking.get_frame()
+        frame = arUcoTracking.get_frame(self.tracking)
 
         canvas_w = self.camera.winfo_width()
         canvas_h = self.camera.winfo_height()
@@ -76,38 +90,3 @@ root = tk.Tk()
 app = UserInterface(root)
 root.mainloop()
 arUcoTracking.stop()
-
-
-# window = tk.Tk()
-
-# height = window.winfo_screenheight()
-# width = window.winfo_screenwidth()
-# size = f"{width}x{height}"
-
-# window.geometry(size)
-# window.state('zoomed')
-
-# def start():
-#     print("pressed")
-
-# startup = tk.Button(
-#     window,
-#     text = "START",
-#     width = 30,
-#     height = 30,
-#     bg = "green",
-#     fg = "blue",
-#     command=start
-# )
-# startup.pack()
-
-# password = tk.Entry(fg="yellow", bg="blue", width=50)
-
-
-
-# window.mainloop()
-
-
-
-
-

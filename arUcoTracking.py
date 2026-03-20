@@ -50,12 +50,17 @@ def aruco_display(corners, ids, rejected, image):
 
 	return image
 
-def get_frame():
-    img = picam2.capture_array()
-    corners, ids, rejected = detector.detectMarkers(img)
-    output = aruco_display(corners, ids, rejected, img)
-    output = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
-    return output
+def get_frame(tracking):
+	if tracking:
+		img = picam2.capture_array()
+		corners, ids, rejected = detector.detectMarkers(img)
+		output = aruco_display(corners, ids, rejected, img)
+		output = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
+		return output
+	else:
+		noWork = picam2.capture_array()
+		noWork = cv2.cvtColor(noWork, cv2.COLOR_RGB2BGR)
+		return noWork
 
 def stop():
     picam2.stop()
