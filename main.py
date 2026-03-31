@@ -9,40 +9,45 @@ class UserInterface:
     def __init__(self,window):
         self.window = window
         self.window.title("User Interface")
-        self.window.attributes('-zoomed', True)
         
-        self.window.geometry("1280x720")
+        
 
         self.tracking=False
-
         self.correctTargetAttack=False
         
+        self.window.grid_columnconfigure(0, weight=1)
+        self.window.grid_columnconfigure(1, weight=1)
+        self.window.grid_rowconfigure(0, weight=1)
+        self.window.grid_rowconfigure(1, weight=0)
+        self.window.grid_rowconfigure(2, weight=0) 
 
-#width=1280,height=720
-       # make columns and rows expand to fill the window
-        window.grid_columnconfigure(0, weight=1)
-        window.grid_columnconfigure(1, weight=1)
-        window.grid_rowconfigure(0, weight=1)
-
-        self.camera = tk.Canvas(window, width=int(window.winfo_screenwidth()/2), height=int(window.winfo_screenheight()/2))
+        self.camera = tk.Canvas(window)
         self.camera.grid(row=0, column=0, sticky="nsew")
 
-        self.radar = tk.Canvas(window, width=int(window.winfo_screenwidth()/2), height=int(window.winfo_screenheight()/2))
+        self.radar = tk.Canvas(window)
         self.radar.grid(row=0, column=1, sticky="nsew")
 
-        self.start = tk.Button(window, text="START", bg="green", fg="blue", command=self.start)
-        self.start.grid(row=1, column=0, sticky="nsew")
+        self.startBtn = tk.Button(window, text="START", bg="green", fg="blue", command=self.start)
+        self.startBtn.grid(row=1, column=0, sticky="nsew")
 
-        self.stop = tk.Button(window, text="STOP", bg="red", fg="blue", command=self.stop)
-        self.stop.grid(row=1, column=1, sticky="nsew")
+        self.stopBtn = tk.Button(window, text="STOP", bg="red", fg="blue", command=self.stop)
+        self.stopBtn.grid(row=1, column=1, sticky="nsew")
 
         self.lockOn = tk.Button(window, text="Lock onto the target", command=self.correctTarget)
         self.lockOn.grid(row=2, column=0, sticky="nsew")
 
         self.shutDown = tk.Button(window, text="Stur Down", command=self.close)
         self.shutDown.grid(row=2, column=1, sticky="nsew")
+    
+        self.window.update_idletasks()
+
+        self.window.attributes('-fullscreen', True)
 
         self.update()
+
+
+    def getButtonClickCordinates():
+        pass
 
     def start(self):
         self.tracking=True
@@ -73,6 +78,9 @@ class UserInterface:
 
         canvas_w = self.camera.winfo_width()
         canvas_h = self.camera.winfo_height()
+
+        if canvas_w < 50 or canvas_h < 50:
+            canvas_w, canvas_h = 800, 600
 
         frame = cv2.resize(frame, (canvas_w, canvas_h))
 

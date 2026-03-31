@@ -52,7 +52,7 @@ def aruco_display(corners, ids, rejected, image):
 				cv2.putText(image, f"({cX}, {cY})", (cX + 10, cY - 10),
 					cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-				print(f"Marker ID {markerID} | Center: ({cX}, {cY})")
+				#print(f"Marker ID {markerID} | Center: ({cX}, {cY})")
 	
 
 		else: 
@@ -87,7 +87,7 @@ def aruco_display(corners, ids, rejected, image):
 				cv2.putText(image, f"({cX}, {cY})", (cX + 10, cY - 10),
 					cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-				print(f"Marker ID {markerID} | Center: ({cX}, {cY})")
+				#print(f"Marker ID {markerID} | Center: ({cX}, {cY})")
 
 			center = multitargetCenter(cordinates)
 
