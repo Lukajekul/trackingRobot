@@ -3,6 +3,10 @@ from PIL import Image,ImageTk
 import os
 import arUcoTracking
 import cv2
+import threading
+import time
+import json
+import serial
 
 
 class UserInterface:
@@ -10,6 +14,14 @@ class UserInterface:
         self.window = window
         self.window.title("User Interface")
         
+        try:
+            self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+            time.sleep(2)
+            print("Serial connection!")
+        except Exception as e:
+            print(f"Serial Error: {e}")
+            self.ser = None
+
         
 
         self.tracking=False
@@ -43,8 +55,20 @@ class UserInterface:
 
         self.window.attributes('-fullscreen', True)
 
-        self.update()
+        self.lock = threading.Lock()
+        self.currentX = 0
+        self.currentY = 0
 
+        motorThread = threading.Thread(target=self.motorLoop, daemon=True)
+        motorThread.start()
+
+        self.latestFrame = None
+        self.frameLock = threading.Lock()
+
+        cameraThreading = threading.Thread(target=self.cameraLoop, daemon=True)
+        cameraThreading.start()
+        
+        self.window.after(10, self.update)
 
     def getButtonClickCordinates():
         pass
@@ -57,6 +81,13 @@ class UserInterface:
 
     def correctTarget(self):
         self.correctTargetAttack=True
+
+    def send(self, payload):
+        if self.ser and self.ser.is_open:
+            try:
+                self.ser.write((payload + '\n').encode())
+            except Exception as e:
+                print(f"Send failed: {e}")
 
     def close(self):
         closeWindow = tk.Toplevel(self.window)
@@ -73,24 +104,82 @@ class UserInterface:
 
 
 
+    def cameraLoop(self):
+        while True:
+            frame, x, y = arUcoTracking.get_frame(self.tracking)
+            if frame is not None:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                with self.frameLock:
+                    self.latestFrame = frame
+            with self.lock:
+                if x is not None and y is not None:
+                    self.currentX = x
+                    self.currentY = y
+            
+            time.sleep(0.01)
+
     def update(self):
-        frame = arUcoTracking.get_frame(self.tracking)
+        with self.frameLock:
+            frame = self.latestFrame
 
-        canvas_w = self.camera.winfo_width()
-        canvas_h = self.camera.winfo_height()
+        if frame is not None:
+            canvas_w = self.camera.winfo_width()
+            canvas_h = self.camera.winfo_height()
 
-        if canvas_w < 50 or canvas_h < 50:
-            canvas_w, canvas_h = 800, 600
+            if canvas_w < 50 or canvas_h < 50:
+                canvas_w, canvas_h = 800, 600
 
-        frame = cv2.resize(frame, (canvas_w, canvas_h))
+            frame = cv2.resize(frame, (canvas_w, canvas_h))
 
-        img = Image.fromarray(frame)
-        imgtk = ImageTk.PhotoImage(image=img)
+            img = Image.fromarray(frame)
+            imgtk = ImageTk.PhotoImage(image=img)
 
-        self.camera.imgtk = imgtk
-        self.camera.create_image(0,0, anchor=tk.NW, image=imgtk)
+            self.camera.imgtk = imgtk
+            self.camera.delete("all")
+            self.camera.create_image(0,0, anchor=tk.NW, image=imgtk)
 
-        self.window.after(10, self.update)
+        self.window.after(30, self.update)
+
+    def motorLoop(self):
+
+        while True:
+            with self.lock:
+                x = self.currentX
+                y = self.currentY
+
+            if self.correctTargetAttack:
+                data = {
+                    "active" : self.tracking,
+                    "x" : x,
+                    "y" : y,
+                    "laser": True
+                }
+            else:
+                data = {
+                    "active" : self.tracking,
+                    "x" : x,
+                    "y" : y,
+                    "laser": False
+                }
+
+
+            self.send(json.dumps(data))
+
+            # if self.ser and self.ser.in_waiting > 0:
+            #     try:
+            #         response = self.ser.readline().decode('utf-8').strip()
+            #         if response:
+            #             print(f"ESP32 says: {response}")
+            #     except Exception as e:
+            #         print(f"Read error: {e}")
+
+            
+
+
+
+            time.sleep(0.05)
+    
+
 
 
 

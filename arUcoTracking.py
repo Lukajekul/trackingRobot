@@ -21,6 +21,8 @@ def multitargetCenter(cordinates):
 	return center
 
 def aruco_display(corners, ids, rejected, image):
+	relX, relY = None, None
+
 	if len(corners) > 0:
 		ids = ids.flatten()
 		if len(corners) == 4:
@@ -55,7 +57,7 @@ def aruco_display(corners, ids, rejected, image):
 				#print(f"Marker ID {markerID} | Center: ({cX}, {cY})")
 	
 
-		else: 
+		else:
 			cordinates = []
 			for (markerCorner, markerID) in zip(corners, ids):
 				markerCorners = markerCorner.reshape((4, 2))
@@ -90,24 +92,26 @@ def aruco_display(corners, ids, rejected, image):
 				#print(f"Marker ID {markerID} | Center: ({cX}, {cY})")
 
 			center = multitargetCenter(cordinates)
-
 			cv2.circle(image, (int(center[0]), int(center[1])), 4, (255, 255, 0), -1)
 
-		return image
+			relX = int(center[0]) - 640
+			relY = -(int(center[1]) - 360)
+
+	return image,relX,relY
 
 def get_frame(tracking):
 	if tracking:
 		img = picam2.capture_array()
 		corners, ids, rejected = detector.detectMarkers(img)
-		output = aruco_display(corners, ids, rejected, img)
+		output,x,y = aruco_display(corners, ids, rejected, img)
 		if output is None:
 			output = img
 		output = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
-		return output
+		return output,x,y
 	else:
 		noWork = picam2.capture_array()
 		noWork = cv2.cvtColor(noWork, cv2.COLOR_RGB2BGR)
-		return noWork
+		return noWork,0,0
 
 def stop():
     picam2.stop()
