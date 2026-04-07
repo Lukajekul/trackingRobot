@@ -22,7 +22,9 @@ class UserInterface:
             print(f"Serial Error: {e}")
             self.ser = None
 
-        
+        self.keyOne = "123"
+        self.keyTwo = "456"
+        self.keyThree = "789"
 
         self.tracking=False
         self.correctTargetAttack=False
@@ -80,7 +82,47 @@ class UserInterface:
         self.tracking=False
 
     def correctTarget(self):
-        self.correctTargetAttack=True
+        if self.correctTargetAttack == False
+            def testKeys():
+                if self.keyOne == key1.get() and self.keyTwo == key2.get() and self.keyThree == key3.get():
+                    self.correctTargetAttack = True
+                    targetWindow.destroy
+                    self.lockOn.configure(text="Target destrojed")
+                else:
+                    wrongWindow = tk.Toplevel(targetWindow)
+                    wrongWindow.geometry("250x150")
+                    wrongWindow.title("Wrong entry")
+                    tk.lable(wrongWindow, text="One of the keys is wrong").pack(pady=20)
+
+                    tk.Button(buttonFrame, text="OK", command=wrongWindow.destroy).pack(side=tk.RIGHT, padx=5)
+
+
+            targetWindow = tk.Toplevel(self.window)
+            targetWindow.geometry("250x150")
+            targetWindow.title("Activate laser")
+            tk.lable(targetWindow, text="key 1")
+            tk.lable(targetWindow, text="key 2")
+            tk.lable(targetWindow, text="key 3")
+        
+            key1 = tk.Entry(targetWindow)
+            key2 = tk.Entry(targetWindow)
+            key3 = tk.Entry(targetWindow)
+
+            key1.grid(row=0, column=1)
+            key2.grid(row=1, column=1)
+            key3.grid(row=2, column=1)
+
+
+
+
+            buttonFrame = tk.Frame(targetWindow)
+            buttonFrame.pack()
+
+            tk.Button(buttonFrame, text="YES", command=testKeys).pack(side=tk.LEFT, padx=5)
+            tk.Button(buttonFrame, text="NO", command=targetWindow.destroy).pack(side=tk.LEFT, padx=5)
+        elif self.correctTargetAttack == True:
+            self.correctTarget == False
+            self.lockOn.configure(text="Lock onto the target")
 
     def send(self, payload):
         if self.ser and self.ser.is_open:
