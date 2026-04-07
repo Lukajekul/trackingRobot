@@ -1,32 +1,42 @@
 #include <ArduinoJson.h>
 #include <AccelStepper.h>
 
-#define Laser 16
+// --- SETTINGS & THRESHOLDS ---
+#define DEAD_ZONE 25         
+#define motorInterfaceType 1 
+#define LaserPin 13          
 
-#define DEAD_ZONE 30  // no = sign in #define
+// --- PIN DEFINITIONS ---
+const int stepX = 26; const int dirX = 27;
+const int stepY = 32; const int dirY = 25;
 
-#define motorInterfaceType 1
+// --- SOFT LIMITS ---
+const long maxStepsX = 800;  
+const long maxStepsY = 400;  
 
+// --- STEPPER INSTANCES ---
+AccelStepper stepperX(motorInterfaceType, stepX, dirX);
+AccelStepper stepperY(motorInterfaceType, stepY, dirY);
 
-const int stepPinY = 32;
-const int dirPinY = 25;
+// --- GLOBAL VARIABLES ---
+const int moveSpeed = 250;    
+unsigned long lastMsgTime = 0; 
 
-const int stepPinX = 26;
-const int dirPinX = 27;
-
-AccelStepper stepperY(motorInterfaceType, stepPinY, dirPinY);
-AccelStepper stepperX(motorInterfaceType, stepPinX, dirPinX);
-
-const int moveSpeed = 200;
-
+// This tells the compiler the function exists before we use it
+void stopEverything(); 
 
 void setup() {
   Serial.begin(115200);
+  
+  pinMode(LaserPin, OUTPUT);
+  digitalWrite(LaserPin, LOW);
 
-  pinMode(Laser, OUTPUT);
-
-  stepperY.setMaxSpeed(1000);
   stepperX.setMaxSpeed(1000);
+  stepperY.setMaxSpeed(1000);
+  
+  // Reset positions to 0 (Make sure camera is centered manually first!)
+  stepperX.setCurrentPosition(0);
+  stepperY.setCurrentPosition(0);
 }
 
 void loop() {
@@ -34,64 +44,63 @@ void loop() {
     String msg = Serial.readStringUntil('\n');
     msg.trim();
 
-    JsonDocument doc;  // replaces StaticJsonDocument
+    JsonDocument doc; 
     DeserializationError error = deserializeJson(doc, msg);
 
-    if (error) {
-      Serial.println("Invalid JSON!");
-      return;
-    }
+    if (!error) {
+      lastMsgTime = millis(); 
+      
+      int targetX = doc["x"];     
+      int targetY = doc["y"];     
+      bool active = doc["active"]; 
+      bool laserReq = doc["laser"]; 
 
-    int x = doc["x"];
-    int y = doc["y"];
-    bool active = doc["active"];
-    bool laserAct = doc["laser"];
+      if (active) {
+        // --- X AXIS (PAN) ---
+        long posX = stepperX.currentPosition();
+        if (targetX > DEAD_ZONE && posX < maxStepsX) {
+          stepperX.setSpeed(moveSpeed);
+        } 
+        else if (targetX < -DEAD_ZONE && posX > -maxStepsX) {
+          stepperX.setSpeed(-moveSpeed);
+        } 
+        else {
+          stepperX.setSpeed(0);
+        }
 
-    // // x axis
-    // if (x > DEAD_ZONE) {
-    //   // move right
-    // } else if (x < -DEAD_ZONE) {
-    //   // move left
-    // }
+        // --- Y AXIS (TILT) ---
+        long posY = stepperY.currentPosition();
+        if (targetY > DEAD_ZONE && posY < maxStepsY) {
+          stepperY.setSpeed(moveSpeed);
+        } 
+        else if (targetY < -DEAD_ZONE && posY > -maxStepsY) {
+          stepperY.setSpeed(-moveSpeed);
+        } 
+        else {
+          stepperY.setSpeed(0);
+        }
 
-    if (laserAct){
-      digitalWrite(Laser, HIGH);
-    }
-    else {
-      digitalWrite(Laser, LOW);
-    }
+        // --- LASER ---
+        digitalWrite(LaserPin, laserReq ? HIGH : LOW);
 
-    if (active){
-      if (y > DEAD_ZONE) {
-        stepperY.setSpeed(moveSpeed);
-      } else if (y < -DEAD_ZONE) {
-        stepperY.setSpeed(-moveSpeed);
+      } else {
+        stopEverything();
       }
-      else{
-        stepperY.setSpeed(0);
-      }
-
-      if (x > DEAD_ZONE) {
-        stepperX.setSpeed(moveSpeed);
-      } else if (x < -DEAD_ZONE) {
-        stepperX.setSpeed(-moveSpeed);
-      }
-      else{
-        stepperX.setSpeed(0);
-      }
-
-
     }
-
-
-    else {
-      stepperY.setSpeed(0);
-      stepperX.setSpeed(0);
-    }
-
-
-    
   }
-  stepperY.runSpeed();
+
+  // Safety Timeout: Stop if no message for 0.5s
+  if (millis() - lastMsgTime > 500) {
+    stopEverything();
+  }
+
   stepperX.runSpeed();
+  stepperY.runSpeed();
+}
+
+// The actual function definition
+void stopEverything() {
+  stepperX.setSpeed(0);
+  stepperY.setSpeed(0);
+  digitalWrite(LaserPin, LOW);
 }
